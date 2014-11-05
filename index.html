@@ -1,0 +1,76 @@
+<html>
+	<head>
+		<title>JS Point Cloud</title>
+		<style>
+			body { margin: 0; }
+			canvas { width: 100%; height: 100% }
+		</style>
+	</head>
+	<body>
+    <script src="js/papaparse.min.js"></script>
+		<script src="js/three.min.js"></script>
+    <script src="js/TrackballControls.js"></script>
+		<script>
+			var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+      var renderer = new THREE.WebGLRenderer();
+      renderer.setSize( window.innerWidth, window.innerHeight );
+      document.body.appendChild( renderer.domElement );
+
+      var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+      var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+      var cube = new THREE.Mesh( geometry, material );
+      scene.add( cube );
+
+      camera.position.z = 3;
+
+      function render() {
+	       renderer.render(scene, camera);
+      }
+
+      // Setup controls
+      var controls = new THREE.TrackballControls(camera);
+      controls.rotateSpeed = 1.0;
+      controls.zoomSpeed = 10.2;
+      controls.panSpeed = 0.8;
+      controls.noZoom = false;
+      controls.noPan = false;
+      controls.staticMoving = true;
+      controls.dynamicDampingFactor = 0.3;
+      controls.keys = [65, 17, 18];
+      controls.addEventListener('change', render);
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        cube.rotation.x += 0.1;
+        cube.rotation.y += 0.1;
+
+        controls.update();
+      }
+
+      render();
+      animate();
+
+      // Zoom on wheel
+        function onMouseWheel(evt) {
+          var d = ((typeof evt.wheelDelta != "undefined")?(-evt.wheelDelta):evt.detail);
+          d = 100 * ((d>0)?1:-1);
+          console.log(d);
+          var cPos = camera.position;
+          if (isNaN(cPos.x) || isNaN(cPos.y) || isNaN(cPos.y)) return;
+          // Your zomm limitation
+          // For X axe you can add anothers limits for Y / Z axes
+          if (cPos.z > 50  || cPos.z < -50 ) return;
+          mb = d>0 ? 1.1 : 0.9;
+          cPos.x  = cPos.x * mb;
+          cPos.y  = cPos.y * mb;
+          cPos.z  = cPos.z * mb;
+        }
+
+         window.addEventListener('DOMMouseScroll', onMouseWheel, false);
+        window.addEventListener('mousewheel', onMouseWheel, false);
+		</script>
+	</body>
+</html>
