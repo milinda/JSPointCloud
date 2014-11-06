@@ -55,9 +55,9 @@
         controls.keys = [ 65, 83, 68 ];
         controls.addEventListener('change', render);
 
-        var heus = [0.3, 0.8, 0.5, 0.6, 0.7];
+        var heus = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95];
 
-        Papa.parse("data/AMF_Phylo_Seqs_599Nts_Apr17MAFFT_seqs_swgms_pid_1821_smacof_points_w_orig_pnum.csv", {
+        Papa.parse("data/r0.125798.sample.28418.fixed.smacof.pid_points_w_orig_pnum.csv", {
             download: true,
             complete: function (results) {
 
@@ -68,18 +68,9 @@
                 for (var i in results.data) {
                     var row = results.data[i];
 
-                    var color;
+                    var hsl;
 
-//                    if (row[4] in colorMap) {
-//                        //color = colorMap[row[4]];
-//                        color = heus[row[4]];
-//                    } else {
-//                        color = [ Math.random(), 1, 0.9];
-//                        colorMap[row[4]] = color;
-//
-//                    }
-
-                    color = [heus[row[4]], 1, 0.8];
+                    hsl = [heus[row[4]], 1, 0.8];
 
                     var vertex = new THREE.Vector3();
                     vertex.x = row[1] * 10;
@@ -89,16 +80,8 @@
                     geometry.vertices.push(vertex);
 
                     colors[i] = new THREE.Color(0xffffff);
-                    colors[i].setHSL(color[0], color[1], color[2]);
+                    colors[i].setHSL(hsl[0], hsl[1], hsl[2]);
                 }
-
-//                geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-//                geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
-//                geometry.computeBoundingSphere();
-//                //
-//                var material = new THREE.PointCloudMaterial({ size: 0.02, vertexColors: THREE.VertexColors });
-//                particleSystem = new THREE.PointCloud(geometry, material);
-//                scene.add(particleSystem);
 
                 geometry.colors = colors;
                 material = new THREE.PointCloudMaterial({ size: 0.05, map: sprite, vertexColors: THREE.VertexColors, transparent: true });
