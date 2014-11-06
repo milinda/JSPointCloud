@@ -4,6 +4,7 @@
     <style>
         body {
             margin: 0;
+            background-color: #ffffff;
         }
 
         canvas {
@@ -15,70 +16,110 @@
 <body>
 <script src="js/papaparse.min.js"></script>
 <script src="js/three.min.js"></script>
+<script src="js/TrackballControls.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/stats.min.js"></script>
 <script src="js/randomColor.js"></script>
 <script>
     if (!Detector.webgl) Detector.addGetWebGLMessage();
     var container, stats;
-    var camera, scene, renderer;
+    var camera, scene, renderer, sprite, colors = [], particles, material, controls, light;
     var mesh;
     var particleSystem;
     var colorMap = {};
+
+    var mouseX = 10, mouseY = 10;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
 
     init();
 
     function init() {
         container = document.body;
         //
-        camera = new THREE.PerspectiveCamera(27, window.innerWidth / window.innerHeight, 0.1, 5);
-        camera.position.z = 5;
+        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 6;
         scene = new THREE.Scene();
+        //scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+
         //scene.fog = new THREE.Fog(0x050505, 9, 9);
+
+        controls = new THREE.TrackballControls(camera);
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.noZoom = false;
+        controls.noPan = false;
+        controls.staticMoving = true;
+        controls.dynamicDampingFactor = 0.3;
+        controls.keys = [ 65, 83, 68 ];
+        controls.addEventListener('change', render);
+
+        var heus = [0.3, 0.8, 0.5, 0.6, 0.7];
 
         Papa.parse("data/AMF_Phylo_Seqs_599Nts_Apr17MAFFT_seqs_swgms_pid_1821_smacof_points_w_orig_pnum.csv", {
             download: true,
-            complete: function(results) {
+            complete: function (results) {
 
-                var geometry = new THREE.BufferGeometry();
+                var geometry = new THREE.Geometry();
+                var colors = [];
+                sprite = THREE.ImageUtils.loadTexture("textures/ball.png");
 
-                console.log("Size:", results.data.length);
-
-                var positions = new Float32Array(results.data.length * 3);
-                var colors = new Float32Array(results.data.length * 3);
-
-                for(var i in results.data){
+                for (var i in results.data) {
                     var row = results.data[i];
 
                     var color;
 
-                    if(row[4] in colorMap){
-                        color = colorMap[row[4]];
-                    } else {
-                        color = new THREE.Color();
-                        color.setRGB(Math.floor((Math.random() * 255) + 1), Math.floor((Math.random() * 255) + 1), Math.floor((Math.random() * 255) + 1));
-                        colorMap[row[4]] = color;
-                    }
+//                    if (row[4] in colorMap) {
+//                        //color = colorMap[row[4]];
+//                        color = heus[row[4]];
+//                    } else {
+//                        color = [ Math.random(), 1, 0.9];
+//                        colorMap[row[4]] = color;
+//
+//                    }
 
-                    positions[i] = row[1] * 10;
-                    positions[i + 1] = row[2] * 10;
-                    positions[i + 2] = row[3] * 10;
+                    color = [heus[row[4]], 1, 0.8];
 
-                    colors[ i ] = color.r;
-                    colors[ i + 1 ] = color.g;
-                    colors[ i + 2 ] = color.b;
+                    var vertex = new THREE.Vector3();
+                    vertex.x = row[1] * 10;
+                    vertex.y = row[2] * 10;
+                    vertex.z = row[3] * 10;
+
+                    geometry.vertices.push(vertex);
+
+                    colors[i] = new THREE.Color(0xffffff);
+                    colors[i].setHSL(color[0], color[1], color[2]);
                 }
 
-                geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
-                geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
-                geometry.computeBoundingSphere();
+//                geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+//                geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
+//                geometry.computeBoundingSphere();
+//                //
+//                var material = new THREE.PointCloudMaterial({ size: 0.02, vertexColors: THREE.VertexColors });
+//                particleSystem = new THREE.PointCloud(geometry, material);
+//                scene.add(particleSystem);
+
+                geometry.colors = colors;
+                material = new THREE.PointCloudMaterial({ size: 0.05, map: sprite, vertexColors: THREE.VertexColors, transparent: true });
+                material.color.setHSL(1.0, 1, 1);
+                particles = new THREE.PointCloud(geometry, material);
+                particles.sortParticles = true;
+                scene.add(particles);
+
+                light = new THREE.DirectionalLight(0xffffff);
+                light.position.set(1, 1, 1);
+                scene.add(light);
+                light = new THREE.DirectionalLight(0x002288);
+                light.position.set(-1, -1, -1);
+                scene.add(light);
+                light = new THREE.AmbientLight(0x222222);
+                scene.add(light);
+
                 //
-                var material = new THREE.PointCloudMaterial({ size: 0.02, vertexColors: true });
-                particleSystem = new THREE.PointCloud(geometry, material);
-                scene.add(particleSystem);
-                //
-                renderer = new THREE.WebGLRenderer({ antialias: true });
-                //renderer.setClearColor(scene.fog.color, 1);
+                renderer = new THREE.WebGLRenderer({clearAlpha: 1, antialias: false});
+                //renderer.setClearColor( 0xffffff, 1);
+                //renderer.setClearColor( scene.fog.color, 1 );
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 container.appendChild(renderer.domElement);
                 //
@@ -87,9 +128,9 @@
                 stats.domElement.style.top = '0px';
                 container.appendChild(stats.domElement);
                 //
+
                 window.addEventListener('resize', onWindowResize, false);
 
-                console.log(colorMap);
                 animate();
             }
         });
@@ -98,18 +139,20 @@
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        controls.handleResize();
+        render();
     }
     //
     function animate() {
         requestAnimationFrame(animate);
+        controls.update();
         render();
-        stats.update();
     }
+
+
     function render() {
-//        var time = Date.now() * 0.001;
-//        particleSystem.rotation.x = time * 0.25;
-//        particleSystem.rotation.y = time * 0.5;
         renderer.render(scene, camera);
+        stats.update();
     }
 </script>
 </body>
